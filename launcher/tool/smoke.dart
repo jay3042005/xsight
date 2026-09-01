@@ -63,38 +63,56 @@ Future<void> main(List<String> args) async {
           File('${copy.path}/.env').readAsStringSync() == '# sentinel-env',
       'db + .env survived the merge');
 
-  // 5. Start the updated server copy and poll health. The deployment model
-  // runs the SYSTEM python (requirements installed globally); on this dev
-  // laptop only the server venv has them, so fall back to it — the process
-  // handling under test is the same either way.
+  // 5. Start the updated server copy and poll health. Skipped entirely when
+  // port 8000 is already answering — a developer's live server would answer
+  // the health/version polls and the assertions would test the WRONG server.
+  final portBusy = await _probe8000();
+  if (portBusy) {
+    print('SKIP  server start — port 8000 is in use (a live server is running)');
+    print('      stop it first to exercise the start/health/version path');
+  } else {
   final venvPy = '${loc.serverDir}/.venv/bin/python';
   final startPy = File(venvPy).existsSync() ? venvPy : loc.pythonPath!;
-  print('starting server with: $startPy');
-  final proc = ServerProcess();
-  final statusLog = <String>[];
-  final sub = proc.status.listen((s) => statusLog.add(s.name));
-  final healthDone = Completer<Map<String, dynamic>?>();
-  late final StreamSubscription hsub;
-  hsub = proc.health.listen((h) {
-    if (h != null && !healthDone.isCompleted) healthDone.complete(h);
-  });
-  await proc.start(pythonPath: startPy, serverDir: copy.path);
-  final health = await healthDone.future.timeout(const Duration(seconds: 60));
-  check('server started and /health answered', health != null,
-      'chat=${health?['chat_provider']} model=${health?['model']}');
-  final version = await HttpClient()
-      .getUrl(Uri.parse('http://127.0.0.1:8000/version'))
-      .then((r) => r.close())
-      .then((r) => r.transform(utf8.decoder).join());
-  check('/version reports stamped sha', version.contains(sha.substring(0, 12)),
-      version.length > 80 ? '${version.substring(0, 80)}…' : version);
-  await proc.stop();
-  await sub.cancel();
-  await hsub.cancel();
-  check('server stopped cleanly', statusLog.contains('stopped') || true,
-      'states: ${statusLog.join(' → ')}');
+    print('starting server with: $startPy');
+    final proc = ServerProcess();
+    final statusLog = <String>[];
+    final sub = proc.status.listen((s) => statusLog.add(s.name));
+    final healthDone = Completer<Map<String, dynamic>?>();
+    late final StreamSubscription hsub;
+    hsub = proc.health.listen((h) {
+      if (h != null && !healthDone.isCompleted) healthDone.complete(h);
+    });
+    await proc.start(pythonPath: startPy, serverDir: copy.path);
+    final health = await healthDone.future.timeout(const Duration(seconds: 60));
+    check('server started and /health answered', health != null,
+        'chat=${health?['chat_provider']} model=${health?['model']}');
+    final version = await HttpClient()
+        .getUrl(Uri.parse('http://127.0.0.1:8000/version'))
+        .then((r) => r.close())
+        .then((r) => r.transform(utf8.decoder).join());
+    check('/version reports stamped sha', version.contains(sha.substring(0, 12)),
+        version.length > 80 ? '${version.substring(0, 80)}…' : version);
+    await proc.stop();
+    await sub.cancel();
+    await hsub.cancel();
+    check('server stopped cleanly', statusLog.contains('stopped') || true,
+        'states: ${statusLog.join(' → ')}');
+  }
 
   await Directory(tmp.path).delete(recursive: true).catchError((_) => tmp);
   print(failures == 0 ? 'ALL PASS' : '$failures FAILURES');
   exit(failures == 0 ? 0 : 1);
+}
+
+/// True when something already answers on the port the test server would use.
+Future<bool> _probe8000() async {
+  try {
+    final req = await HttpClient()
+        .getUrl(Uri.parse('http://127.0.0.1:8000/health'))
+        .timeout(const Duration(seconds: 2));
+    final res = await req.close().timeout(const Duration(seconds: 2));
+    return res.statusCode == 200;
+  } catch (_) {
+    return false;
+  }
 }

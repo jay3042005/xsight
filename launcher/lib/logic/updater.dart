@@ -134,7 +134,8 @@ class Updater {
         } else {
           continue;
         }
-        final target = File(_join(serverDir, targetRel));
+        final target =
+            File('$serverDir${Platform.pathSeparator}$targetRel');
         await target.parent.create(recursive: true);
         await target.writeAsBytes(f.content as List<int>);
         copied++;

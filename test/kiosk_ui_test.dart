@@ -2085,6 +2085,32 @@ group('guided scan panel on a landscape phone', () {
   // fixed-length list" — which only shows up once the ticker actually runs
   // (a single pump() in the layout tests never ticks it). Pump with elapsed
   // time so the ticker fires, and expect a clean build.
+  // Regression: the chat screen used to rely on the shell's Scaffold for
+  // its Material ancestor. Pushed as a route from the voice stage it has
+  // none, and the starter-card InkWells crashed with "No Material widget
+  // found" — so the test pushes it exactly the way production does.
+  testWidgets('assistant chat survives being pushed as a bare route',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: XSTheme.light(),
+      home: Builder(
+        builder: (context) => Center(
+          child: XSButton(
+            label: 'OPEN',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const KioskChatScreen()),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('OPEN'));
+    await tester.pumpAndSettle();
+    // The starter cards are the empty state — the very widgets that crashed.
+    expect(find.text('Summarize this session'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('voice mode visualizer ticker does not throw', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
