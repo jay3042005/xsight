@@ -65,3 +65,5 @@ Untitled*.ipynb
 xsight_statistical_treatment_guide.pdf
 test_english.wav
 test_tagalog.wav
+dist/
+server/voices.bin
