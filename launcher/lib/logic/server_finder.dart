@@ -45,51 +45,79 @@ class ServerFinder {
         Platform.environment['HOME'] ?? '';
     final exeDir = File(Platform.resolvedExecutable).parent.path;
     if (Platform.isWindows) {
+      final deep = <String>[
+        _p(home, 'Desktop'),
+        _p(home, 'OneDrive', 'Desktop'),
+        _p(home, 'Documents'),
+        _p(home, 'Downloads'),
+      ].where((r) => r.isNotEmpty).toSet();
       return [
         exeDir,
-        if (home.isNotEmpty) ...[
-          _p(home, 'Desktop'),
-          _p(home, 'OneDrive', 'Desktop'),
-          _p(home, 'Documents'),
-          _p(home, 'OneDrive', 'Documents'),
-          home,
-        ],
+        ...deep,
+        if (home.isNotEmpty) home,
         'C:\\XSIGHT',
         'C:\\build\\xsight',
       ].where((r) => r.isNotEmpty).toSet().toList();
     }
+    final deep = <String>[
+      _p(home, 'Desktop'),
+      _p(home, 'Documents'),
+      _p(home, 'Downloads'),
+    ].where((r) => r.isNotEmpty).toSet();
     return [
       exeDir,
-      if (home.isNotEmpty) ...[
-        _p(home, 'Desktop'),
-        _p(home, 'Documents'),
-        home,
-      ],
+      ...deep,
+      if (home.isNotEmpty) home,
       '/opt/xsight',
       '/srv/xsight',
     ].where((r) => r.isNotEmpty).toSet().toList();
   }
 
+  /// The user-content roots that get the bounded deep walk (pass 3). The
+  /// home root itself is excluded — walking it would spend the whole budget
+  /// in AppData/.cache before ever reaching a user folder.
+  static Set<String> get _deepScanRoots =>
+      _roots.where((r) => _userContent.any(r.endsWith)).toSet();
+
+  static const _userContent = [
+    'Desktop', 'Documents', 'Downloads',
+  ];
+
   /// Names a hit folder may carry. The server dir is usually `server` inside
   /// a repo checkout, but a user may have copied just the server out.
   static const _dirNames = ['server', 'xsight', 'XSIGHT'];
 
+  /// Walk budget: stop scanning after this many directories in one root. A
+  /// Desktop is not a filesystem — this bounds the worst case (a folder full
+  /// of node_modules) to milliseconds.
+  static const _maxDirs = 2000;
+
+  /// Never descended into during the deep walk: hidden dirs, dependency
+  /// caches and build outputs can contain tens of thousands of subfolders
+  /// and can never be the server.
+  static const _skipDirs = {
+    'node_modules', '.venv', 'venv', '__pycache__', '.git', 'build', 'dist',
+    '.dart_tool', 'AppData', '.cache',
+  };
+
   /// Scan all roots. Returns null when nothing matched.
+  ///
+  /// Two passes per root: quick named checks first (`<root>/server`,
+  /// `<root>/<child>/server`), then a bounded recursive walk that tests
+  /// EVERY directory for the signature — so a server folder with an unusual
+  /// name, or nested one level deeper than the quick pass, still gets found.
   static Future<ServerLocation?> find() async {
     for (final root in _roots) {
       final rootDir = Directory(root);
       if (!await rootDir.exists()) continue;
 
-      // 1. The root itself (Desktop\server, a repo copied straight out…).
+      // 1. The root itself (Desktop/server, a repo copied straight out…).
       final direct = await _isServerDir(rootDir);
       if (direct != null) {
         return await _withPython(direct, root);
       }
 
-      // 2. Children, two patterns each:
-      //    <root>/server            — bare server copy
-      //    <root>/<anything>/server — repo checkout under any folder name
-      // Depth is capped at 2 so a Desktop littered with folders stays fast.
+      // 2. Quick pass: the conventional shapes at depth 1–2.
       for (final name in _dirNames) {
         final hit = await _isServerDir(Directory(_p(root, name)));
         if (hit != null) return await _withPython(hit, _p(root, name));
@@ -105,8 +133,42 @@ class ServerFinder {
       } on FileSystemException {
         // Permission-denied on some system folder — keep scanning.
       }
+
+      // 3. Deep pass: any directory up to depth 3, any name. Only for the
+      // user-content roots — walking `~` itself would drown in AppData.
+      if (_deepScanRoots.contains(root)) {
+        final hit = await _deepScan(rootDir, 3);
+        if (hit != null) return hit;
+      }
     }
     return null;
+  }
+
+  static Future<ServerLocation?> _deepScan(Directory dir, int depth) async {
+    var visited = 0;
+    Future<ServerLocation?> walk(Directory d, int remaining) async {
+      if (visited++ > _maxDirs || remaining < 0) return null;
+      try {
+        final entries = d.listSync(followLinks: false);
+        // Test this directory and each subdirectory for the signature.
+        for (final e in entries) {
+          if (e is! Directory) continue;
+          final base = e.path.split(_sep).last;
+          if (base.startsWith('.') || _skipDirs.contains(base)) continue;
+          final hit = await _isServerDir(e);
+          if (hit != null) return await _withPython(hit, e.path);
+          if (remaining > 0) {
+            final nested = await walk(e, remaining - 1);
+            if (nested != null) return nested;
+          }
+        }
+      } on FileSystemException {
+        // Unreadable — skip this branch, keep walking.
+      }
+      return null;
+    }
+
+    return walk(dir, depth);
   }
 
   /// Validate a user-supplied path the same way auto-detect validates its
