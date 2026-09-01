@@ -20,7 +20,6 @@ class _LauncherPanelState extends State<LauncherPanel> {
   final LauncherController _c = LauncherController();
   final _scroll = ScrollController();
   final _manual = TextEditingController();
-  final _repo = TextEditingController();
 
   @override
   void initState() {
@@ -208,14 +207,13 @@ class _LauncherPanelState extends State<LauncherPanel> {
       return _bannerRow(Icons.downloading, 'APPLYING UPDATE…', XS.warn);
     }
     if (u == null) {
-      // No repo configured — footer has the field to set it.
-      return _bannerRow(Icons.cloud_off_outlined, 'UPDATE SOURCE NOT SET', XS.textSecondary);
+      return const SizedBox.shrink();
     }
     if (u.offline) {
       return _bannerRow(Icons.wifi_off_outlined, 'CANNOT REACH GITHUB', XS.textSecondary);
     }
     if (u.repoMissing) {
-      return _bannerRow(Icons.search_off, 'REPO ${_c.updater.config!.slug} NOT FOUND', XS.bad);
+      return _bannerRow(Icons.search_off, 'GITHUB REPO NOT FOUND', XS.bad);
     }
     if (u.available || u.unknownLocal) {
       return InkWell(
@@ -480,107 +478,60 @@ class _LauncherPanelState extends State<LauncherPanel> {
   }
 
   Widget _footer() {
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            SizedBox(
-              width: 300,
-              child: TextField(
-                controller: _repo,
-                style: const TextStyle(color: XS.textPrimary, fontSize: 13),
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: 'github.com/owner/name',
-                  hintStyle: const TextStyle(color: XS.textSecondary, fontSize: 12),
-                  filled: true,
-                  fillColor: XS.surfaceRaised,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: XS.divider),
-                  ),
-                ),
-                onSubmitted: (v) async {
-                  await _c.setRepo(v);
-                  setState(_repo.clear);
-                },
+        Expanded(
+          child: TextField(
+            controller: _manual,
+            style: const TextStyle(color: XS.textPrimary, fontSize: 13),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText:
+                  '…or paste the server folder path, e.g. C:\\Users\\you\\Desktop\\xsight\\server',
+              hintStyle: const TextStyle(color: XS.textSecondary, fontSize: 12),
+              filled: true,
+              fillColor: XS.surfaceRaised,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: XS.divider),
               ),
             ),
-            const SizedBox(width: XS.xs),
-            OutlinedButton.icon(
-              onPressed: () async {
-                await _c.setRepo(_repo.text);
-                setState(_repo.clear);
-              },
-              icon: const Icon(Icons.cloud_download_outlined, size: 18, color: XS.sage),
-              label: const Text(
-                'SET SOURCE',
-                style: TextStyle(color: XS.sage, fontWeight: FontWeight.w800, letterSpacing: 1),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: XS.sage),
-                padding: const EdgeInsets.symmetric(horizontal: XS.md, vertical: XS.md),
-              ),
-            ),
-            const Spacer(),
-            if (_c.checkingUpdate)
-              const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: XS.sage),
-              )
-            else
-              OutlinedButton.icon(
-                onPressed: _c.checkUpdate,
-                icon: const Icon(Icons.refresh, size: 18, color: XS.sage),
-                label: const Text(
-                  'CHECK UPDATE',
-                  style: TextStyle(color: XS.sage, fontWeight: FontWeight.w800, letterSpacing: 1),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: XS.sage),
-                  padding: const EdgeInsets.symmetric(horizontal: XS.lg, vertical: XS.md),
-                ),
-              ),
-          ],
+            onSubmitted: _c.useManualPath,
+          ),
         ),
-        const SizedBox(height: XS.sm),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _manual,
-                style: const TextStyle(color: XS.textPrimary, fontSize: 13),
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText:
-                      '…or paste the server folder path, e.g. C:\\Users\\you\\Desktop\\xsight\\server',
-                  hintStyle: const TextStyle(color: XS.textSecondary, fontSize: 12),
-                  filled: true,
-                  fillColor: XS.surfaceRaised,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: XS.divider),
-                  ),
-                ),
-                onSubmitted: _c.useManualPath,
-              ),
-            ),
-            const SizedBox(width: XS.sm),
-            OutlinedButton.icon(
-              onPressed: _c.searching ? null : _c.detect,
-              icon: const Icon(Icons.travel_explore, size: 18, color: XS.sage),
-              label: const Text(
-                'DETECT',
-                style: TextStyle(color: XS.sage, fontWeight: FontWeight.w800, letterSpacing: 1),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: XS.sage),
-                padding: const EdgeInsets.symmetric(horizontal: XS.lg, vertical: XS.md),
-              ),
-            ),
-          ],
+        const SizedBox(width: XS.sm),
+        OutlinedButton.icon(
+          onPressed: _c.searching ? null : _c.detect,
+          icon: const Icon(Icons.travel_explore, size: 18, color: XS.sage),
+          label: const Text(
+            'DETECT',
+            style: TextStyle(color: XS.sage, fontWeight: FontWeight.w800, letterSpacing: 1),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: XS.sage),
+            padding: const EdgeInsets.symmetric(horizontal: XS.lg, vertical: XS.md),
+          ),
         ),
+        const SizedBox(width: XS.sm),
+        if (_c.checkingUpdate)
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2, color: XS.sage),
+          )
+        else
+          OutlinedButton.icon(
+            onPressed: _c.checkUpdate,
+            icon: const Icon(Icons.refresh, size: 18, color: XS.sage),
+            label: const Text(
+              'CHECK UPDATE',
+              style: TextStyle(color: XS.sage, fontWeight: FontWeight.w800, letterSpacing: 1),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: XS.sage),
+              padding: const EdgeInsets.symmetric(horizontal: XS.lg, vertical: XS.md),
+            ),
+          ),
       ],
     );
   }

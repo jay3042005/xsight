@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
@@ -26,11 +25,7 @@ class LauncherController extends ChangeNotifier {
 
   final ServerProcess _proc = ServerProcess();
   final List<String> logLines = [];
-
-  /// Repo config lives beside the exe so it survives launcher updates.
-  final Updater updater = Updater(
-    File('${File(Platform.resolvedExecutable).parent.path}\\launcher.json'),
-  );
+  final Updater updater = Updater();
 
   ServerLocation? location;
   ServerStatus status = ServerStatus.stopped;
@@ -48,7 +43,6 @@ class LauncherController extends ChangeNotifier {
   Future<void> init() async {
     lanIp = await HostInfo.lanIp();
     notifyListeners();
-    await updater.loadConfig();
     await detect();
     await checkUpdate();
   }
@@ -82,7 +76,7 @@ class LauncherController extends ChangeNotifier {
 
   Future<void> checkUpdate() async {
     final loc = location;
-    if (loc == null || updater.config == null) {
+    if (loc == null) {
       update = null;
       notifyListeners();
       return;
@@ -115,23 +109,6 @@ class LauncherController extends ChangeNotifier {
       updating = false;
       notifyListeners();
     }
-  }
-
-  Future<void> setRepo(String slugAndBranch) async {
-    // Accept `owner/name`, `owner/name@branch`, or a full GitHub URL.
-    var s = slugAndBranch.trim().replaceFirst(RegExp(r'^https?://github\.com/'), '');
-    s = s.replaceFirst(RegExp(r'\.git$'), '').replaceFirst(RegExp(r'/tree/'), '@');
-    final branch = s.contains('@') ? s.split('@').last : 'main';
-    final slug = s.split('@').first;
-    final parts = slug.split('/');
-    if (parts.length < 2) {
-      logLines.add('✗ "$slugAndBranch" is not owner/name — nothing saved');
-      notifyListeners();
-      return;
-    }
-    await updater.saveConfig(RepoConfig(owner: parts[0], name: parts[1], branch: branch));
-    logLines.add('✓ updates from ${parts[0]}/${parts[1]}@$branch');
-    await checkUpdate();
   }
 
   Future<void> start() async {

@@ -24,34 +24,50 @@ class ServerLocation {
   bool get hasPython => pythonPath != null;
 }
 
-/// Finds the XSIGHT backend on this machine, Windows-style.
+/// Finds the XSIGHT backend on this machine, Windows or Linux.
 ///
 /// The signature of the server directory is `main.py` **and** `app/main.py`
 /// — plenty of projects have a `main.py`, and starting the wrong one would
 /// open a console that dies instantly and confuse the log panel with a
 /// traceback nobody asked for.
 class ServerFinder {
+  static final String _sep = Platform.pathSeparator;
+
+  static String _p(String a, [String? b, String? c]) =>
+      [a, ?b, ?c].join(_sep);
+
   /// Directories whose children (and grandchildren) are scanned. Ordered by
   /// priority: beside-the-exe first (a launcher shipped inside the repo
   /// should win), then the Desktop — "the server lives on the home desktop"
   /// — then Documents, then fixed fallbacks.
   static List<String> get _roots {
-    final home = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'] ?? '';
+    final home = Platform.environment['USERPROFILE'] ??
+        Platform.environment['HOME'] ?? '';
     final exeDir = File(Platform.resolvedExecutable).parent.path;
-    final roots = <String>[
+    if (Platform.isWindows) {
+      return [
+        exeDir,
+        if (home.isNotEmpty) ...[
+          _p(home, 'Desktop'),
+          _p(home, 'OneDrive', 'Desktop'),
+          _p(home, 'Documents'),
+          _p(home, 'OneDrive', 'Documents'),
+          home,
+        ],
+        'C:\\XSIGHT',
+        'C:\\build\\xsight',
+      ].where((r) => r.isNotEmpty).toSet().toList();
+    }
+    return [
       exeDir,
       if (home.isNotEmpty) ...[
-        '$home\\Desktop',
-        '$home\\OneDrive\\Desktop',
-        '$home\\Documents',
-        '$home\\OneDrive\\Documents',
+        _p(home, 'Desktop'),
+        _p(home, 'Documents'),
         home,
       ],
-      'C:\\XSIGHT',
-      'C:\\build\\xsight',
-    ];
-    // De-dup while keeping order.
-    return roots.where((r) => r.isNotEmpty).toSet().toList();
+      '/opt/xsight',
+      '/srv/xsight',
+    ].where((r) => r.isNotEmpty).toSet().toList();
   }
 
   /// Names a hit folder may carry. The server dir is usually `server` inside
@@ -71,19 +87,19 @@ class ServerFinder {
       }
 
       // 2. Children, two patterns each:
-      //    <root>\server            — bare server copy
-      //    <root>\<anything>\server — repo checkout under any folder name
+      //    <root>/server            — bare server copy
+      //    <root>/<anything>/server — repo checkout under any folder name
       // Depth is capped at 2 so a Desktop littered with folders stays fast.
       for (final name in _dirNames) {
-        final hit = await _isServerDir(Directory('$root\\$name'));
-        if (hit != null) return await _withPython(hit, '$root\\$name');
+        final hit = await _isServerDir(Directory(_p(root, name)));
+        if (hit != null) return await _withPython(hit, _p(root, name));
       }
       try {
         final children = rootDir.listSync(followLinks: false).whereType<Directory>();
         for (final child in children) {
           for (final name in _dirNames) {
-            final hit = await _isServerDir(Directory('${child.path}\\$name'));
-            if (hit != null) return await _withPython(hit, '${child.path}\\$name');
+            final hit = await _isServerDir(Directory(_p(child.path, name)));
+            if (hit != null) return await _withPython(hit, _p(child.path, name));
           }
         }
       } on FileSystemException {
@@ -103,8 +119,8 @@ class ServerFinder {
 
   static Future<String?> _isServerDir(Directory dir) async {
     try {
-      final main = File('${dir.path}\\main.py');
-      final appMain = File('${dir.path}\\app\\main.py');
+      final main = File(_p(dir.path, 'main.py'));
+      final appMain = File(_p(dir.path, 'app', 'main.py'));
       if (await main.exists() && await appMain.exists()) return dir.path;
     } on FileSystemException {
       // Not a directory / unreadable — not a hit.
@@ -135,25 +151,34 @@ class ServerFinder {
   }
 
   static Future<List<String>> _pythonCandidates() async {
-    final home = Platform.environment['USERPROFILE'] ?? '';
-    final candidates = <String>[
-      'python.exe',
-      'py.exe', // py launcher — invoked as `py main.py` below
-    ];
-    // Fixed install locations beat whatever `where.exe` finds first when
-    // several interpreters live on PATH (e.g. the Microsoft Store shim,
-    // which exists but cannot run anything).
-    for (final d in [
-      'C:\\Program Files\\Python313',
-      'C:\\Program Files\\Python312',
-      'C:\\Program Files\\Python311',
-      'C:\\Program Files\\Python310',
-      if (home.isNotEmpty) '$home\\AppData\\Local\\Programs\\Python\\Python313',
-      if (home.isNotEmpty) '$home\\AppData\\Local\\Programs\\Python\\Python312',
-      if (home.isNotEmpty) '$home\\AppData\\Local\\Programs\\Python\\Python311',
-    ]) {
-      candidates.insert(0, '$d\\python.exe');
+    final home = Platform.environment['USERPROFILE'] ??
+        Platform.environment['HOME'] ?? '';
+    if (Platform.isWindows) {
+      final candidates = <String>[
+        'python.exe',
+        'py.exe', // py launcher — invoked as `py main.py` below
+      ];
+      // Fixed install locations beat whatever `where.exe` finds first when
+      // several interpreters live on PATH (e.g. the Microsoft Store shim,
+      // which exists but cannot run anything).
+      for (final d in [
+        'C:\\Program Files\\Python313',
+        'C:\\Program Files\\Python312',
+        'C:\\Program Files\\Python311',
+        'C:\\Program Files\\Python310',
+        if (home.isNotEmpty) '$home\\AppData\\Local\\Programs\\Python\\Python313',
+        if (home.isNotEmpty) '$home\\AppData\\Local\\Programs\\Python\\Python312',
+        if (home.isNotEmpty) '$home\\AppData\\Local\\Programs\\Python\\Python311',
+      ]) {
+        candidates.insert(0, '$d\\python.exe');
+      }
+      return candidates;
     }
-    return candidates;
+    return [
+      'python3',
+      'python',
+      '/usr/bin/python3',
+      '/usr/local/bin/python3',
+    ];
   }
 }
