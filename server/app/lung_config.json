@@ -1,0 +1,13 @@
+{
+  "n_mels": 64,
+  "n_time": 128,
+  "n_fft": 512,
+  "hop_length": 256,
+  "window_sec": 4.0,
+  "hop_sec": 2.0,
+  "num_classes": 4,
+  "temperature": 1.486491322517395,
+  "sample_rate": 16000,
+  "bandpass_low": 50.0,
+  "bandpass_high": 2000.0
+}

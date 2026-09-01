@@ -1,0 +1,8 @@
+# Trained model artifacts dropped in here are gitignored.
+# Keep a placeholder file so git tracks the directory.
+xray.pt
+xray.onnx
+xray.onnx.data
+labels.json
+metrics.json
+confusion.png

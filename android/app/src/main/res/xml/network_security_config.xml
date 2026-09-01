@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext HTTP is permitted, because this app's backend *is* a plain-HTTP
+  server on the local network.
+
+  XSIGHT is a LAN appliance: the kiosk talks to a FastAPI server on the same
+  Wi-Fi, reached by IP, with no certificate and no DNS name to issue one for.
+  There is no HTTPS endpoint to prefer. (This is the same constraint that forced
+  the phone-handoff relay to exist: an HTTPS capture page cannot POST to the
+  kiosk's plain-HTTP LAN address, so a cloud relay bridges the two.)
+
+  Why base-config rather than a domain list: the server's address comes from the
+  venue's DHCP and changes between sites, and the app finds it by sweeping the
+  subnet (XSServerDiscovery). Neither the address nor the range can be enumerated
+  here — Android's network security config takes hostnames and literal IPs, not
+  CIDR blocks — so an allowlist would make discovery impossible and a LAN backend
+  unreachable on any physical device.
+
+  Note that `android:usesCleartextTraffic` in the manifest is IGNORED whenever
+  this file is present, so this is the only thing that actually decides the
+  policy. With base-config set to false, every request to a LAN IP was blocked by
+  the platform before it left the app.
+
+  If this ever gains an internet-facing backend, give that host its own
+  domain-config requiring HTTPS rather than relaxing it here.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

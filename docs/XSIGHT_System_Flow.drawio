@@ -1,0 +1,417 @@
+<mxfile host="embed.diagrams.net" pages="3">
+  <diagram id="page-1" name="System Flow">
+    <mxGraphModel dx="2543" dy="1189" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title1" parent="1" style="text;html=1;fontSize=24;fontStyle=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;fontColor=#1a1a2e;" value="XSIGHT: System Flow" vertex="1">
+          <mxGeometry height="40" width="400" x="600" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="title1sub" parent="1" style="text;html=1;fontSize=11;fontStyle=2;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;fontColor=#555;" value="An Intelligent Thoracic Assessment System for AI-Assisted Respiratory Disease Detection and Clinical Decision Support" vertex="1">
+          <mxGeometry height="20" width="700" x="450" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="start" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1a1a2e;fontColor=#ffffff;strokeColor=#1a1a2e;fontSize=12;fontStyle=1;" value="SYSTEM STARTUP" vertex="1">
+          <mxGeometry height="50" width="160" x="720" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="poweron" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#333333;fontSize=10;align=center;" value="ESP32 Powers On OLED Initializes Sensors Detected (MAX30102, MLX90614, MAX9814)" vertex="1">
+          <mxGeometry height="60" width="230" x="685" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="start" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333;" target="poweron">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ready" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=10;align=center;" value="Serial: READY:1 OLED: XSIGHT Logo + Lung Icon" vertex="1">
+          <mxGeometry height="45" width="210" x="695" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="poweron" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333;" target="ready">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="flutter" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=10;align=center;" value="Flutter App Detects XSIGHT Module USB Serial Handshake (PING/PONG)" vertex="1">
+          <mxGeometry height="45" width="210" x="695" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="ready" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333;" target="flutter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mode" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontSize=11;fontStyle=1;" value="User Selects Mode" vertex="1">
+          <mxGeometry height="70" width="180" x="710" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="flutter" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333;" target="mode">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="guest" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#f9a825;fontSize=10;align=center;fontStyle=1;" value="GUEST MODE Self-Service Kiosk Direct Sensor Access" vertex="1">
+          <mxGeometry height="55" width="160" x="500" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="mode" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#f9a825;strokeWidth=2;entryX=0;entryY=0.5;" target="guest">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5label" connectable="0" parent="e5" style="edgeLabel;html=1;fontSize=10;fontStyle=1;fontColor=#f9a825;" value="Guest" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="staff" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=10;align=center;fontStyle=1;" value="STAFF MODE EMR Access Patient Records" vertex="1">
+          <mxGeometry height="55" width="160" x="940" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="mode" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#283593;strokeWidth=2;entryX=1;entryY=0.5;" target="staff">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6label" connectable="0" parent="e6" style="edgeLabel;html=1;fontSize=10;fontStyle=1;fontColor=#283593;" value="Staff Login" vertex="1">
+          <mxGeometry relative="1" x="0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="assess" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1a1a2e;fontColor=#ffffff;strokeColor=#1a1a2e;fontSize=11;fontStyle=1;" value="ASSESSMENT MODULE SELECTION" vertex="1">
+          <mxGeometry height="55" width="200" x="700" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="guest" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333;exitX=0.5;exitY=1;" target="assess">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="staff" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333;exitX=0.5;exitY=1;" target="assess">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_xray" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=10;fontStyle=1;align=center;" value="Chest X-Ray" vertex="1">
+          <mxGeometry height="50" width="90" x="180" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_steth" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=10;fontStyle=1;align=center;" value="Digital Stethoscope" vertex="1">
+          <mxGeometry height="50" width="90" x="310" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_vitals" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;fontStyle=1;align=center;" value="Heart Rate &amp; SpO₂" vertex="1">
+          <mxGeometry height="50" width="90" x="440" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_temp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontSize=10;fontStyle=1;align=center;" value="Body Temperature" vertex="1">
+          <mxGeometry height="50" width="90" x="570" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_ai" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#6a1b9a;fontSize=10;fontStyle=1;align=center;" value="AI Clinical Assistant" vertex="1">
+          <mxGeometry height="50" width="90" x="700" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_summary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=10;fontStyle=1;align=center;" value="Assessment Summary" vertex="1">
+          <mxGeometry height="50" width="90" x="830" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="em1" edge="1" parent="1" source="assess" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1565c0;exitX=0;exitY=1;exitDx=0;exitDy=0;" target="mod_xray">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em2" edge="1" parent="1" source="assess" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#00695c;" target="mod_steth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em3" edge="1" parent="1" source="assess" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#c62828;" target="mod_vitals">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em4" edge="1" parent="1" source="assess" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#e65100;" target="mod_temp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em5" edge="1" parent="1" source="assess" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6a1b9a;" target="mod_ai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em6" edge="1" parent="1" source="assess" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2e7d32;" target="mod_summary">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_bg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#ddd;" value="" vertex="1">
+          <mxGeometry height="160" width="200" x="1150" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_title" parent="1" style="text;html=1;fontSize=11;fontStyle=1;align=center;fontColor=#333;" value="LEGEND" vertex="1">
+          <mxGeometry height="15" width="180" x="1160" y="105" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1" parent="1" style="rounded=1;fillColor=#e3f2fd;strokeColor=#1565c0;" value="" vertex="1">
+          <mxGeometry height="12" width="20" x="1165" y="128" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1t" parent="1" style="text;fontSize=9;align=left;fontColor=#333;" value="Flutter App" vertex="1">
+          <mxGeometry height="18" width="100" x="1195" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2" parent="1" style="rounded=1;fillColor=#f5f5f5;strokeColor=#333;" value="" vertex="1">
+          <mxGeometry height="12" width="20" x="1165" y="148" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2t" parent="1" style="text;fontSize=9;align=left;fontColor=#333;" value="ESP32 Hardware" vertex="1">
+          <mxGeometry height="18" width="100" x="1195" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3" parent="1" style="rounded=1;fillColor=#e8f5e9;strokeColor=#2e7d32;" value="" vertex="1">
+          <mxGeometry height="12" width="20" x="1165" y="168" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3t" parent="1" style="text;fontSize=9;align=left;fontColor=#333;" value="Sensor/Output" vertex="1">
+          <mxGeometry height="18" width="100" x="1195" y="165" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4" parent="1" style="rounded=1;fillColor=#fff3e0;strokeColor=#e65100;" value="" vertex="1">
+          <mxGeometry height="12" width="20" x="1165" y="188" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4t" parent="1" style="text;fontSize=9;align=left;fontColor=#333;" value="Decision Point" vertex="1">
+          <mxGeometry height="18" width="100" x="1195" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5" parent="1" style="rounded=1;fillColor=#1a1a2e;strokeColor=#1a1a2e;" value="" vertex="1">
+          <mxGeometry height="12" width="20" x="1165" y="208" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5t" parent="1" style="text;fontSize=9;align=left;fontColor=#333;" value="Start/End Process" vertex="1">
+          <mxGeometry height="18" width="100" x="1195" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="note1" parent="1" style="shape=note;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#f9a825;fontSize=9;align=center;size=14;" value="Hardware: ESP32 + SSD1306 OLED + MAX30102 + MLX90614 + MAX9814" vertex="1">
+          <mxGeometry height="50" width="200" x="1150" y="290" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="j255f4q7-pxan" name="Assessment Flow">
+    <mxGraphModel dx="1653" dy="773" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title2" parent="1" style="text;html=1;fontSize=22;fontStyle=1;align=center;fontColor=#1a1a2e;" value="XSIGHT: Assessment Data Flow" vertex="1">
+          <mxGeometry height="35" width="500" x="550" y="15" as="geometry" />
+        </mxCell>
+        <mxCell id="patient" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1a1a2e;fontColor=#fff;strokeColor=#1a1a2e;fontSize=11;fontStyle=1;" value="Patient / Guest Arrives at Kiosk" vertex="1">
+          <mxGeometry height="55" width="200" x="700" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="acq_label" parent="1" style="text;html=1;fontSize=12;fontStyle=1;align=center;fontColor=#1565c0;" value="DATA ACQUISITION LAYER (ESP32 + Sensors)" vertex="1">
+          <mxGeometry height="20" width="400" x="100" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="acq_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;strokeWidth=2;dashed=1;" value="" vertex="1">
+          <mxGeometry height="100" width="1400" x="100" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="s_xray" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#1565c0;fontSize=10;align=center;" value="📷 X-Ray Image Upload" vertex="1">
+          <mxGeometry height="40" width="130" x="130" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="s_steth" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#00695c;fontSize=10;align=center;" value="🫁 Lung Sounds MAX9814 Mic" vertex="1">
+          <mxGeometry height="40" width="130" x="310" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="s_hr" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#c62828;fontSize=10;align=center;" value="❤️ Heart Rate MAX30102" vertex="1">
+          <mxGeometry height="40" width="130" x="490" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="s_spo2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#c62828;fontSize=10;align=center;" value="💨 SpO₂ MAX30102" vertex="1">
+          <mxGeometry height="40" width="130" x="670" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="s_temp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#e65100;fontSize=10;align=center;" value="🌡️ Temperature MLX90614" vertex="1">
+          <mxGeometry height="40" width="130" x="850" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="s_history" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#6a1b9a;fontSize=10;align=center;" value="📋 Patient History/EMR" vertex="1">
+          <mxGeometry height="40" width="130" x="1030" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="s_voice" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#6a1b9a;fontSize=10;align=center;" value="🎤 Voice Input AI Assistant" vertex="1">
+          <mxGeometry height="40" width="130" x="1210" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="serial" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;fontSize=10;fontStyle=1;align=center;" value="USB Serial / UART Transport (115200 baud)" vertex="1">
+          <mxGeometry height="30" width="300" x="350" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="as1" edge="1" parent="1" source="s_xray" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#999;" target="serial">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="as2" edge="1" parent="1" source="s_steth" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#999;" target="serial">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="as3" edge="1" parent="1" source="s_hr" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#999;" target="serial">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="as4" edge="1" parent="1" source="s_spo2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#999;" target="serial">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="as5" edge="1" parent="1" source="s_temp" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#999;" target="serial">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="proc_label" parent="1" style="text;html=1;fontSize=12;fontStyle=1;align=center;fontColor=#2e7d32;" value="PROCESSING LAYER (Flutter App + Backend)" vertex="1">
+          <mxGeometry height="20" width="400" x="100" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="proc_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;strokeWidth=2;dashed=1;" value="" vertex="1">
+          <mxGeometry height="120" width="1400" x="100" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="p_xray" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#1565c0;fontSize=10;align=center;" value="AI Chest X-Ray Classification (CNN Model)" vertex="1">
+          <mxGeometry height="55" width="140" x="130" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="p_lung" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#00695c;fontSize=10;align=center;" value="AI Lung Sound Analysis (Audio Classifier)" vertex="1">
+          <mxGeometry height="55" width="140" x="320" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="p_vitals" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#c62828;fontSize=10;align=center;" value="Vital Signs Aggregation HR + SpO₂ + Temp" vertex="1">
+          <mxGeometry height="55" width="140" x="510" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="p_llm" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#6a1b9a;fontSize=10;align=center;" value="LLM Clinical Assistant Summarization" vertex="1">
+          <mxGeometry height="55" width="140" x="700" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="p_cdss" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#e65100;fontSize=10;align=center;fontStyle=1;" value="Clinical Decision Support System (CDSS)" vertex="1">
+          <mxGeometry height="55" width="140" x="890" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="p_emr" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#6a1b9a;fontSize=10;align=center;" value="EMR / Patient Record Storage Web Platform" vertex="1">
+          <mxGeometry height="55" width="140" x="1080" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="acd1" edge="1" parent="1" source="p_xray" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2e7d32;" target="p_cdss">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="acd2" edge="1" parent="1" source="p_lung" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2e7d32;" target="p_cdss">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="acd3" edge="1" parent="1" source="p_vitals" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2e7d32;" target="p_cdss">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="acd4" edge="1" parent="1" source="p_llm" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2e7d32;" target="p_cdss">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="out_label" parent="1" style="text;html=1;fontSize=12;fontStyle=1;align=center;fontColor=#6a1b9a;" value="OUTPUT &amp; REPORTING LAYER" vertex="1">
+          <mxGeometry height="20" width="300" x="100" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="out_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#6a1b9a;strokeWidth=2;dashed=1;" value="" vertex="1">
+          <mxGeometry height="100" width="1400" x="100" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="o_report" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#2e7d32;fontSize=10;align=center;fontStyle=1;" value="Assessment Report" vertex="1">
+          <mxGeometry height="45" width="120" x="200" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="o_display" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#1565c0;fontSize=10;align=center;" value="Real-Time Dashboard" vertex="1">
+          <mxGeometry height="45" width="120" x="400" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="o_oled" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#333;fontSize=10;align=center;" value="ESP32 OLED Display" vertex="1">
+          <mxGeometry height="45" width="120" x="600" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="o_voice" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#6a1b9a;fontSize=10;align=center;" value="AI Voice Response" vertex="1">
+          <mxGeometry height="45" width="120" x="800" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="o_referral" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#e65100;fontSize=10;align=center;" value="Clinical Guidance" vertex="1">
+          <mxGeometry height="45" width="120" x="1000" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="ao1" edge="1" parent="1" source="p_cdss" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6a1b9a;" target="o_report">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ao2" edge="1" parent="1" source="p_cdss" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6a1b9a;" target="o_display">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ao3" edge="1" parent="1" source="p_cdss" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6a1b9a;" target="o_oled">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ao4" edge="1" parent="1" source="p_cdss" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6a1b9a;" target="o_voice">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ao5" edge="1" parent="1" source="p_cdss" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6a1b9a;" target="o_referral">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="end" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1a1a2e;fontColor=#fff;strokeColor=#1a1a2e;fontSize=11;fontStyle=1;" value="Assessment Complete" vertex="1">
+          <mxGeometry height="50" width="140" x="730" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="ae1" edge="1" parent="1" source="o_report" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#333;" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae2" edge="1" parent="1" source="o_referral" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#333;" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbg" parent="1" style="rounded=1;fillColor=#fafafa;strokeColor=#ddd;" value="" vertex="1">
+          <mxGeometry height="80" width="200" x="1300" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="lt" parent="1" style="text;fontSize=11;fontStyle=1;align=center;fontColor=#333;" value="LEGEND" vertex="1">
+          <mxGeometry height="15" width="180" x="1310" y="73" as="geometry" />
+        </mxCell>
+        <mxCell id="l1" parent="1" style="rounded=1;fillColor=#e3f2fd;strokeColor=#1565c0;" value="" vertex="1">
+          <mxGeometry height="10" width="20" x="1310" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="l1t" parent="1" style="text;fontSize=9;align=left;fontColor=#333;" value="Data Acquisition" vertex="1">
+          <mxGeometry height="16" width="120" x="1340" y="92" as="geometry" />
+        </mxCell>
+        <mxCell id="l2" parent="1" style="rounded=1;fillColor=#e8f5e9;strokeColor=#2e7d32;" value="" vertex="1">
+          <mxGeometry height="10" width="20" x="1310" y="112" as="geometry" />
+        </mxCell>
+        <mxCell id="l2t" parent="1" style="text;fontSize=9;align=left;fontColor=#333;" value="Processing Layer" vertex="1">
+          <mxGeometry height="16" width="120" x="1340" y="109" as="geometry" />
+        </mxCell>
+        <mxCell id="l3" parent="1" style="rounded=1;fillColor=#f3e5f5;strokeColor=#6a1b9a;" value="" vertex="1">
+          <mxGeometry height="10" width="20" x="1310" y="129" as="geometry" />
+        </mxCell>
+        <mxCell id="l3t" parent="1" style="text;fontSize=9;align=left;fontColor=#333;" value="Output &amp; Reporting" vertex="1">
+          <mxGeometry height="16" width="120" x="1340" y="126" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="7z47oyie-g119" name="ESP32 State Machine">
+    <mxGraphModel dx="1378" dy="644" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title3" parent="1" style="text;html=1;fontSize=22;fontStyle=1;align=center;fontColor=#1a1a2e;" value="XSIGHT: ESP32 OLED State Machine" vertex="1">
+          <mxGeometry height="35" width="500" x="350" y="15" as="geometry" />
+        </mxCell>
+        <mxCell id="s_intro" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#1a1a2e;fontColor=#fff;strokeColor=#1a1a2e;fontSize=11;fontStyle=1;align=center;" value="STATE_INTRO XSIGHT Logo Lung Icon" vertex="1">
+          <mxGeometry height="60" width="160" x="500" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="s_menu" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#283593;fontSize=10;align=center;fontStyle=1;" value="STATE_MENU 6 Items: XRAY, STETH, VITALS, TEMP, SUMMARY, ASSIST" vertex="1">
+          <mxGeometry height="55" width="220" x="470" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="em0" edge="1" parent="1" source="s_intro" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#333;strokeWidth=2;" target="s_menu">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em0l" connectable="0" parent="em0" style="edgeLabel;fontSize=9;fontStyle=1;fontColor=#333;" value="SELECT" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s_xray" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontSize=10;align=center;" value="STATE_XRAY Upload X-Ray WAITING → DONE" vertex="1">
+          <mxGeometry height="50" width="140" x="80" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="s_steth" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0f2f1;strokeColor=#00695c;fontSize=10;align=center;" value="STATE_STETH Digital Stethoscope IDLE → ACTIVE → DONE" vertex="1">
+          <mxGeometry height="50" width="150" x="270" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="s_pulse" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;fontSize=10;align=center;" value="STATE_PULSE Heart Rate + SpO₂ IDLE → WAITING → ACTIVE → DONE" vertex="1">
+          <mxGeometry height="50" width="170" x="470" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="s_temp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontSize=10;align=center;" value="STATE_TEMP Temperature IDLE → ACTIVE → DONE" vertex="1">
+          <mxGeometry height="50" width="140" x="690" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="s_summary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=10;align=center;" value="STATE_SUMMARY Readings Overview" vertex="1">
+          <mxGeometry height="50" width="130" x="880" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="s_assist" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#6a1b9a;fontSize=10;align=center;" value="STATE_ASSIST Voice Mode Hold OK to Talk" vertex="1">
+          <mxGeometry height="50" width="130" x="1040" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="em1" edge="1" parent="1" source="s_menu" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#1565c0;strokeWidth=1.5;" target="s_xray">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em2" edge="1" parent="1" source="s_menu" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#00695c;strokeWidth=1.5;" target="s_steth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em3" edge="1" parent="1" source="s_menu" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#c62828;strokeWidth=1.5;" target="s_pulse">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em4" edge="1" parent="1" source="s_menu" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#e65100;strokeWidth=1.5;" target="s_temp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em5" edge="1" parent="1" source="s_menu" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2e7d32;strokeWidth=1.5;" target="s_summary">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="em6" edge="1" parent="1" source="s_menu" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6a1b9a;strokeWidth=1.5;" target="s_assist">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eb1" edge="1" parent="1" source="s_xray" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#999;dashed=1;curved=1;exitX=0;exitY=0;entryX=0;entryY=0.5;" target="s_intro">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eb1l" connectable="0" parent="eb1" style="edgeLabel;fontSize=8;fontColor=#999;" value="BACK" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="detail_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c62828;strokeWidth=1;dashed=1;" value="" vertex="1">
+          <mxGeometry height="120" width="280" x="420" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="detail_title" parent="1" style="text;fontSize=11;fontStyle=1;fontColor=#c62828;align=center;" value="STATE_PULSE Sub-States" vertex="1">
+          <mxGeometry height="18" width="180" x="470" y="435" as="geometry" />
+        </mxCell>
+        <mxCell id="ps_idle" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#c62828;fontSize=9;" value="IDLE" vertex="1">
+          <mxGeometry height="25" width="55" x="435" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="ps_wait" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#c62828;fontSize=9;align=center;" value="WAITING (no finger)" vertex="1">
+          <mxGeometry height="25" width="65" x="510" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="ps_active" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#c62828;fontSize=9;align=center;" value="ACTIVE (sampling)" vertex="1">
+          <mxGeometry height="25" width="65" x="595" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="ps_done" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff;strokeColor=#c62828;fontSize=9;" value="DONE" vertex="1">
+          <mxGeometry height="25" width="55" x="680" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="eps1" edge="1" parent="1" source="ps_idle" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#c62828;" target="ps_wait">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eps2" edge="1" parent="1" source="ps_wait" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#c62828;" target="ps_active">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eps2l" connectable="0" parent="eps2" style="edgeLabel;fontSize=8;fontColor=#c62828;" value="finger detected" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eps3" edge="1" parent="1" source="ps_active" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#c62828;" target="ps_done">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eps3l" connectable="0" parent="eps3" style="edgeLabel;fontSize=8;fontColor=#c62828;" value="100 samples / STOP" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oled_note" parent="1" style="shape=note;whiteSpace=wrap;html=1;fillColor=#fffde7;strokeColor=#f9a825;fontSize=9;align=left;size=14;" value="OLED Shows: • IDLE: &quot;PRESS OK TO START&quot; • WAITING: &quot;PLACE FINGER&quot; + icon • ACTIVE: &quot;MEASURING...&quot; + live BPM/SpO₂ • DONE: &quot;COMPLETED&quot; + final values" vertex="1">
+          <mxGeometry height="80" width="280" x="420" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="serial_note" parent="1" style="shape=note;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#2e7d32;fontSize=9;align=left;size=14;" value="Serial Commands: Flutter → ESP32: READ_VITALS, START_STETH,   START_TEMP, STOP_STETH, STOP_VITALS ESP32 → Flutter: VITALS:&lt;bpm&gt;,&lt;spo2&gt;,   TEMP:&lt;c&gt;, STETH:&lt;val&gt;, NAV:&lt;dest&gt;" vertex="1">
+          <mxGeometry height="80" width="280" x="80" y="430" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

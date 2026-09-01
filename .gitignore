@@ -1,0 +1,67 @@
+# --- secrets & credentials (NEVER commit) ---
+.env
+.env.*
+!.env.example
+kaggle.json
+*.pem
+*.key
+
+# --- patient / dev data ---
+*.db
+*.db-wal
+*.db-shm
+server/app/lung_model.pt
+server/app/lung_head_panns.pt
+
+# --- ML weights & training artifacts (multi-MB; distributed by drop-in, not git) ---
+*.onnx
+*.onnx.data
+*.pth
+*.pt
+*.npz
+server/ml/tts/
+server/ml/lung/output/
+server/ml/lung/ml/
+server/ml/xray/legacy_v1/
+server/ml/xray/confusion.png
+
+# --- notebooks can carry outputs with patient samples ---
+*.ipynb_checkpoints
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# --- Flutter / Dart ---
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+*.iml
+.idea/
+
+# --- Node (web relay) ---
+node_modules/
+.vercel/
+
+# --- Claude/local tooling state ---
+.claude/
+.claude-flow/
+.agents/
+.codex/
+.commandcode/
+.backups/
+claude-flow.json
+CLAUDE.local.md
+
+# --- personal / misc docs not part of the product ---
+*.zip
+ChatGPT_Image_*.png
+Untitled*.png
+Untitled*.ipynb
+xsight_statistical_treatment_guide.pdf
+test_english.wav
+test_tagalog.wav

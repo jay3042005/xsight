@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>XSIGHT — Capture</title>
+<style>
+  /* XSIGHT palette, matching lib/core/theme/xs_colors.dart so the phone step
+     reads as part of the same system as the kiosk. */
+  :root {
+    --teal: #1B6B6F;
+    --teal-dark: #0F3D3E;
+    --sage: #6C9A8B;
+    --slate: #2F3E46;
+    --mint: #DCEDEA;
+    --surface: #DCEDEA;
+    --highlight: #FFFFFF;
+    --text-primary: #2F3E46;
+    --text-secondary: #1B6B6F;
+    --divider: #C9E0DA;
+    --xray: #1565C0;
+    --green: #2E7D32;
+    --orange: #E65100;
+    --red: #C62828;
+    --shadow-dark: rgba(47, 62, 70, .16);
+    --shadow-light: rgba(255, 255, 255, .9);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #2F3E46;
+      --highlight: #1B6B6F;
+      --text-primary: #DCEDEA;
+      --text-secondary: #6C9A8B;
+      --divider: #1B6B6F;
+      --shadow-dark: rgba(0, 0, 0, .45);
+      --shadow-light: rgba(255, 255, 255, .06);
+    }
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--surface);
+    color: var(--text-primary);
+    font: 400 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 20px);
+  }
+  main { max-width: 560px; margin: 0 auto; padding: 20px 18px 0; }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+  .mark {
+    width: 42px; height: 42px; flex: 0 0 42px;
+    border-radius: 13px;
+    background: var(--surface);
+    box-shadow: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+    display: grid; place-items: center;
+  }
+  .mark svg { width: 22px; height: 22px; }
+  .brand { font-size: 19px; font-weight: 800; letter-spacing: -.3px; }
+  .brand small {
+    display: block; font-size: 13px; font-weight: 600;
+    letter-spacing: .4px; color: var(--text-secondary); text-transform: uppercase;
+  }
+
+  /* ── Neumorphic card ────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+  }
+  .eyebrow {
+    font-size: 13px; font-weight: 800; letter-spacing: .9px;
+    text-transform: uppercase; color: var(--text-secondary); margin: 0 0 10px;
+  }
+  h1 { font-size: 22px; font-weight: 800; letter-spacing: -.4px; margin: 0 0 8px; }
+  p { margin: 0 0 12px; color: var(--text-secondary); font-size: 15px; }
+  p:last-child { margin-bottom: 0; }
+
+  /* ── Guide steps ────────────────────────────────────────── */
+  ol.guide { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+  ol.guide li {
+    counter-increment: step;
+    display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--divider);
+  }
+  ol.guide li:last-child { border-bottom: 0; padding-bottom: 0; }
+  ol.guide li::before {
+    content: counter(step);
+    grid-column: 1;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--highlight); color: var(--teal);
+    font-size: 14px; font-weight: 800;
+    display: grid; place-items: center;
+  }
+  /* Both text nodes must be pinned to column 2. Without this the <span> auto
+     places into the next free cell — column 1, which is 30px wide — and the
+     description renders one word per line on a phone. */
+  ol.guide strong, ol.guide span { grid-column: 2; min-width: 0; }
+  ol.guide strong { display: block; font-size: 15px; color: var(--text-primary); }
+  ol.guide span { font-size: 14px; color: var(--text-secondary); }
+
+  /* ── Buttons ────────────────────────────────────────────── */
+  .btn {
+    -webkit-appearance: none; appearance: none; border: 0;
+    width: 100%; min-height: 60px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    border-radius: 16px;
+    font: 800 16px/1 inherit; letter-spacing: .5px; text-transform: uppercase;
+    background: var(--surface); color: var(--text-primary);
+    box-shadow: 5px 5px 12px var(--shadow-dark), -5px -5px 12px var(--shadow-light);
+    margin-bottom: 12px; cursor: pointer;
+    transition: box-shadow .12s ease, transform .12s ease;
+    text-decoration: none;
+  }
+  .btn:active {
+    box-shadow: inset 4px 4px 9px var(--shadow-dark), inset -4px -4px 9px var(--shadow-light);
+    transform: scale(.99);
+  }
+  .btn.primary { background: var(--teal); color: #fff; box-shadow: 5px 5px 14px var(--shadow-dark); }
+  .btn.xray { background: var(--xray); color: #fff; box-shadow: 5px 5px 14px var(--shadow-dark); }
+  .btn[disabled] { opacity: .5; pointer-events: none; }
+  .btn svg { width: 20px; height: 20px; flex: 0 0 20px; }
+
+  /* ── Preview ────────────────────────────────────────────── */
+  #preview-wrap { display: none; }
+  #preview {
+    width: 100%; max-height: 46dvh; object-fit: contain;
+    background: #000; border-radius: 14px; display: block;
+  }
+  .meta { font-size: 13px; color: var(--text-secondary); margin-top: 10px; text-align: center; }
+
+  /* ── Status ─────────────────────────────────────────────── */
+  .status {
+    display: none; align-items: center; gap: 10px;
+    padding: 14px 16px; border-radius: 14px; margin-bottom: 16px;
+    font-size: 15px; font-weight: 600;
+  }
+  .status.show { display: flex; }
+  /* Flex children default to min-content width, which on a narrow phone breaks
+     a long error message onto one word per line. */
+  #status-text { min-width: 0; overflow-wrap: anywhere; }
+  .status.ok { background: rgba(46,125,50,.12); color: var(--green); }
+  .status.err { background: rgba(198,40,40,.12); color: var(--red); }
+  .status.busy { background: var(--highlight); color: var(--text-secondary); }
+  .spinner {
+    width: 18px; height: 18px; flex: 0 0 18px;
+    border: 2.5px solid var(--divider); border-top-color: var(--teal);
+    border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .done-mark {
+    width: 76px; height: 76px; margin: 4px auto 16px;
+    border-radius: 50%; background: rgba(46,125,50,.12);
+    display: grid; place-items: center;
+  }
+  .done-mark svg { width: 38px; height: 38px; }
+
+  footer {
+    text-align: center; font-size: 13px; color: var(--text-secondary);
+    padding: 18px 18px 0; line-height: 1.5;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1B6B6F" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 3v6a6 6 0 0 0 12 0V3"/><path d="M12 15v6"/><path d="M9 21h6"/>
+      </svg>
+    </div>
+    <div class="brand">XSIGHT<small id="brand-sub">Secure transfer</small></div>
+  </header>
+
+  <div id="status" class="status" role="status" aria-live="polite">
+    <span id="status-icon"></span><span id="status-text"></span>
+  </div>
+
+  <!-- ── Expired / invalid ─────────────────────────────────── -->
+  <section id="view-expired" class="card hidden">
+    <p class="eyebrow">Link expired</p>
+    <h1>This code is no longer valid</h1>
+    <p>Transfer codes expire a few minutes after they appear, so nothing is left
+       reachable afterwards. Ask the kiosk to show a new code.</p>
+  </section>
+
+  <!-- ── X-ray capture ─────────────────────────────────────── -->
+  <section id="view-xray" class="hidden">
+    <div class="card">
+      <p class="eyebrow">Step 1 — photograph the film</p>
+      <h1>How to get a clean shot</h1>
+      <ol class="guide">
+        <li><strong>Backlight the film</strong>
+            <span>Tape it to a lightbox, or hold it flat against a bright white
+                  screen or a window.</span></li>
+        <li><strong>Kill the glare</strong>
+            <span>Turn off overhead lights and keep your own reflection out of
+                  the film. No flash.</span></li>
+        <li><strong>Square on, filling the frame</strong>
+            <span>Hold the phone parallel to the film and move in until only the
+                  film is in shot — no desk, no hands.</span></li>
+        <li><strong>Tap to focus, then hold still</strong>
+            <span>Tap the middle of the chest, wait for it to sharpen, then
+                  shoot.</span></li>
+        <li><strong>Check before sending</strong>
+            <span>Rib edges should look crisp. If it is soft or washed out,
+                  retake it — the analysis is only as good as this photo.</span></li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <p class="eyebrow">Step 2 — send it</p>
+      <div id="preview-wrap">
+        <img id="preview" alt="The chest film you are about to send">
+        <p class="meta" id="preview-meta"></p>
+      </div>
+      <input id="file-camera" type="file" accept="image/*" capture="environment" class="hidden">
+      <input id="file-pick" type="file" accept="image/*" class="hidden">
+
+      <button class="btn xray" id="btn-camera" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <span id="btn-camera-label">Take photo</span>
+      </button>
+      <button class="btn" id="btn-pick" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+        </svg>
+        Choose from photos
+      </button>
+      <button class="btn primary hidden" id="btn-send" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>
+        </svg>
+        Send to kiosk
+      </button>
+    </div>
+  </section>
+
+  <!-- ── Sent ──────────────────────────────────────────────── -->
+  <section id="view-sent" class="card hidden">
+    <div class="done-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+    </div>
+    <h1 style="text-align:center">Sent to the kiosk</h1>
+    <p style="text-align:center">The analysis has already started. Look at the
+       kiosk screen for the result — you can put your phone away.</p>
+  </section>
+
+  <!-- ── Report download ───────────────────────────────────── -->
+  <section id="view-report" class="hidden">
+    <div class="card">
+      <p class="eyebrow">Assessment summary</p>
+      <h1>Your report is ready</h1>
+      <p>A PDF of this screening session, including the findings and what was
+         recommended. It stays available for a few minutes only.</p>
+      <a class="btn primary" id="btn-download" href="#" download>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>
+        </svg>
+        Download PDF
+      </a>
+    </div>
+    <div class="card">
+      <p class="eyebrow">Before you go</p>
+      <p>This is an AI-assisted screening report, not a diagnosis. Go through it
+         with a licensed clinician before acting on anything in it.</p>
+    </div>
+  </section>
+
+  <footer>
+    Sent straight to the kiosk you scanned from, then deleted.<br>
+    AI-assisted screening only — not a diagnosis.
+  </footer>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  // The kiosk encodes /s/<sid>; vercel.json rewrites that here, so the path is
+  // still the source of truth for which session this is.
+  const sid = (location.pathname.match(/\/s\/([A-Za-z0-9_-]{16,64})/) || [])[1];
+
+  const el = (id) => document.getElementById(id);
+  const show = (id) => el(id).classList.remove('hidden');
+  const hide = (id) => el(id).classList.add('hidden');
+
+  const statusBox = el('status');
+  function setStatus(kind, text) {
+    if (!kind) { statusBox.classList.remove('show'); return; }
+    statusBox.className = 'status show ' + kind;
+    el('status-icon').innerHTML = kind === 'busy' ? '<span class="spinner"></span>' : '';
+    el('status-text').textContent = text;
+  }
+
+  function fail(text) {
+    setStatus('err', text);
+  }
+
+  if (!sid) {
+    el('brand-sub').textContent = 'Invalid link';
+    show('view-expired');
+    return;
+  }
+
+  let file = null;
+
+  // ── Session probe ─────────────────────────────────────────
+  (async function init() {
+    setStatus('busy', 'Checking the transfer code…');
+    let meta;
+    try {
+      const r = await fetch(`/api/session/${sid}`, { cache: 'no-store' });
+      if (!r.ok) throw new Error('expired');
+      meta = await r.json();
+    } catch {
+      setStatus(null);
+      el('brand-sub').textContent = 'Link expired';
+      show('view-expired');
+      return;
+    }
+    setStatus(null);
+
+    if (meta.kind === 'report') {
+      el('brand-sub').textContent = 'Your summary';
+      el('btn-download').href = `/api/session/${sid}/report`;
+      show('view-report');
+    } else {
+      el('brand-sub').textContent = 'Chest X-ray transfer';
+      show('view-xray');
+    }
+  })();
+
+  // ── File selection ────────────────────────────────────────
+  function accept(f) {
+    if (!f) return;
+    if (!f.type.startsWith('image/')) {
+      fail('That is not an image. Photograph the film, or pick a photo of it.');
+      return;
+    }
+    // Matches the relay's own 10 MB cap, so the user learns about it here
+    // rather than after a long upload on mobile data.
+    if (f.size > 10 * 1024 * 1024) {
+      fail('That photo is over 10 MB. Retake it at a lower resolution.');
+      return;
+    }
+    file = f;
+    setStatus(null);
+    el('preview').src = URL.createObjectURL(f);
+    el('preview-meta').textContent =
+      `${f.name || 'photo'} · ${(f.size / 1048576).toFixed(1)} MB`;
+    el('preview-wrap').style.display = 'block';
+    el('btn-camera-label').textContent = 'Retake photo';
+    show('btn-send');
+    el('btn-send').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  el('btn-camera').onclick = () => el('file-camera').click();
+  el('btn-pick').onclick = () => el('file-pick').click();
+  el('file-camera').onchange = (e) => accept(e.target.files[0]);
+  el('file-pick').onchange = (e) => accept(e.target.files[0]);
+
+  // ── Upload ────────────────────────────────────────────────
+  el('btn-send').onclick = async () => {
+    if (!file) return;
+    const send = el('btn-send');
+    send.disabled = true;
+    el('btn-camera').disabled = true;
+    el('btn-pick').disabled = true;
+    setStatus('busy', 'Sending to the kiosk…');
+
+    try {
+      const r = await fetch(`/api/session/${sid}/film`, {
+        method: 'POST',
+        headers: { 'content-type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body.error || `upload failed (${r.status})`);
+      }
+      setStatus(null);
+      hide('view-xray');
+      show('view-sent');
+      el('brand-sub').textContent = 'Sent';
+    } catch (e) {
+      // Recoverable: the film is still on the phone, so let them retry rather
+      // than making them photograph it again.
+      fail(`${e.message}. Tap send to try again.`);
+      send.disabled = false;
+      el('btn-camera').disabled = false;
+      el('btn-pick').disabled = false;
+    }
+  };
+})();
+</script>
+</body>
+</html>

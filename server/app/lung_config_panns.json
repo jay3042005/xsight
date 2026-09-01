@@ -1,0 +1,21 @@
+{
+  "backend": "panns",
+  "emb_dim": 2048,
+  "hidden": 256,
+  "num_classes": 4,
+  "temperature": 1.9185165166854858,
+  "labels": [
+    "normal",
+    "crackle",
+    "wheeze",
+    "both"
+  ],
+  "sample_rate": 16000,
+  "panns_sr": 32000,
+  "window_sec": 4.0,
+  "bandpass": [
+    50.0,
+    2000.0
+  ],
+  "min_confidence": 0.65
+}

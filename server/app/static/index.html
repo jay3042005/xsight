@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>XSIGHT Voice Test</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --bg: #e8e8e8;
+    --hi: #ffffff;
+    --sh: #a3a3a3;
+    --tx: #0a0a0a;
+    --se: #5c5c5c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#1a1a1a; --hi:#2a2a2a; --sh:#000; --tx:#f5f5f5; --se:#a3a3a3; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100dvh; background: var(--bg); color: var(--tx);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+    display: grid; place-items: center; padding: 24px;
+  }
+  .card {
+    width: min(440px, 100%); padding: 28px; border-radius: 24px; background: var(--bg);
+    box-shadow: -8px -8px 18px var(--hi), 8px 8px 18px var(--sh);
+  }
+  h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: 0.5px; }
+  p.sub { margin: 0 0 24px; color: var(--se); font-size: 13px; }
+  .orb {
+    margin: 8px auto 24px; width: 180px; height: 180px; border-radius: 50%;
+    background: var(--bg);
+    box-shadow: -10px -10px 22px var(--hi), 10px 10px 22px var(--sh);
+    display: grid; place-items: center; transition: transform .25s;
+  }
+  .orb.listening { transform: scale(1.04); }
+  .orb.speaking  { transform: scale(1.07); }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--tx); }
+  .row { display: flex; gap: 12px; }
+  button {
+    flex: 1; height: 56px; border: 0; border-radius: 999px; cursor: pointer;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.3px; color: var(--tx);
+    background: var(--bg);
+    box-shadow: -6px -6px 14px var(--hi), 6px 6px 14px var(--sh);
+  }
+  button.primary { background: var(--tx); color: var(--bg); }
+  button:active { box-shadow: inset 4px 4px 8px var(--sh), inset -4px -4px 8px var(--hi); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .status {
+    margin: 18px 0 8px; padding: 12px 14px; border-radius: 14px;
+    background: var(--bg); border: 1px solid color-mix(in srgb, var(--sh), transparent 60%);
+    font-size: 12px; color: var(--se); letter-spacing: 1px; text-transform: uppercase;
+  }
+  .panel {
+    margin-top: 14px; padding: 14px; border-radius: 16px; background: var(--bg);
+    box-shadow: inset 4px 4px 10px var(--sh), inset -4px -4px 10px var(--hi);
+    min-height: 80px; font-size: 14px; line-height: 1.45; white-space: pre-wrap;
+  }
+  .panel + .panel { margin-top: 10px; }
+  .panel .label { font-size: 10px; letter-spacing: 1.5px; color: var(--se); }
+  input {
+    flex: 1; height: 44px; padding: 0 16px; border-radius: 999px;
+    background: var(--bg); color: var(--tx); border: 0; font: inherit;
+    box-shadow: inset 4px 4px 10px var(--sh), inset -4px -4px 10px var(--hi);
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>XSIGHT Voice</h1>
+    <p class="sub">Talk to the robot in real time. Open this page on the same network as your backend.</p>
+
+    <div id="orb" class="orb"><div class="dot"></div></div>
+
+    <div class="row" style="margin-bottom: 12px;">
+      <input id="ws-url" placeholder="ws://localhost:8000/ws/voice" />
+    </div>
+
+    <div class="row">
+      <button id="start" class="primary">Start</button>
+      <button id="stop" disabled>Stop</button>
+    </div>
+
+    <div class="status" id="status">disconnected</div>
+
+    <div class="panel"><div class="label">YOU</div><div id="transcript">—</div></div>
+    <div class="panel"><div class="label">ROBOT</div><div id="reply">—</div></div>
+  </div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const els = {
+  orb: $('orb'), startBtn: $('start'), stopBtn: $('stop'),
+  status: $('status'), transcript: $('transcript'), reply: $('reply'),
+  url: $('ws-url'),
+};
+els.url.value = `ws://${location.hostname || 'localhost'}:8000/ws/voice`;
+
+let ws, audioCtx, source, processor, mediaStream;
+let playbackCtx, playQueue = [], playTime = 0;
+
+const setStatus = (s) => els.status.textContent = s;
+const setOrb    = (s) => els.orb.className = `orb ${s}`;
+
+function downsample(buffer, fromSR, toSR) {
+  if (toSR === fromSR) return buffer;
+  const ratio = fromSR / toSR;
+  const out = new Float32Array(Math.floor(buffer.length / ratio));
+  let pos = 0, idx = 0;
+  while (pos < out.length) {
+    const next = Math.floor((pos + 1) * ratio);
+    let sum = 0, count = 0;
+    for (let i = idx; i < next && i < buffer.length; i++) { sum += buffer[i]; count++; }
+    out[pos] = count ? sum / count : 0;
+    pos++; idx = next;
+  }
+  return out;
+}
+
+function floatToInt16(buffer) {
+  const out = new Int16Array(buffer.length);
+  for (let i = 0; i < buffer.length; i++) {
+    const s = Math.max(-1, Math.min(1, buffer[i]));
+    out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  return out;
+}
+
+async function start() {
+  els.startBtn.disabled = true;
+  els.stopBtn.disabled = false;
+  setStatus('connecting');
+
+  ws = new WebSocket(els.url.value);
+  ws.binaryType = 'arraybuffer';
+
+  ws.onopen = async () => {
+    setStatus('listening — speak naturally');
+    setOrb('listening');
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+    source = audioCtx.createMediaStreamSource(mediaStream);
+    processor = audioCtx.createScriptProcessor(2048, 1, 1);
+    source.connect(processor);
+    processor.connect(audioCtx.destination);
+    processor.onaudioprocess = (ev) => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      const data = ev.inputBuffer.getChannelData(0);
+      const ds = downsample(data, audioCtx.sampleRate, 16000);
+      const i16 = floatToInt16(ds);
+      ws.send(i16.buffer);
+    };
+
+    playbackCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+    playTime = playbackCtx.currentTime;
+  };
+
+  ws.onmessage = async (ev) => {
+    if (typeof ev.data === 'string') {
+      const obj = JSON.parse(ev.data);
+      if (obj.event === 'transcript') {
+        els.transcript.textContent = obj.text || '...';
+      } else if (obj.event === 'reply') {
+        els.reply.textContent = obj.text;
+        setStatus('robot speaking');
+        setOrb('speaking');
+      } else if (obj.event === 'tts_done') {
+        setStatus('listening');
+        setOrb('listening');
+      } else if (obj.event === 'error') {
+        setStatus(`error: ${obj.detail}`);
+      }
+      return;
+    }
+    // PCM16 @ 24kHz audio chunk.
+    const i16 = new Int16Array(ev.data);
+    const f32 = new Float32Array(i16.length);
+    for (let i = 0; i < i16.length; i++) f32[i] = i16[i] / 0x8000;
+    const buf = playbackCtx.createBuffer(1, f32.length, 24000);
+    buf.copyToChannel(f32, 0);
+    const src = playbackCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(playbackCtx.destination);
+    const t = Math.max(playbackCtx.currentTime, playTime);
+    src.start(t);
+    playTime = t + buf.duration;
+  };
+
+  ws.onclose = () => stop();
+  ws.onerror = () => setStatus('connection error');
+}
+
+function stop() {
+  setOrb('');
+  setStatus('disconnected');
+  els.startBtn.disabled = false;
+  els.stopBtn.disabled = true;
+  if (processor) processor.disconnect();
+  if (source) source.disconnect();
+  if (audioCtx) audioCtx.close().catch(() => {});
+  if (mediaStream) mediaStream.getTracks().forEach((t) => t.stop());
+  if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+  ws = null;
+}
+
+els.startBtn.onclick = start;
+els.stopBtn.onclick = stop;
+</script>
+</body>
+</html>

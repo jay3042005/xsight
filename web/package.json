@@ -1,0 +1,10 @@
+{
+  "name": "xsight-handoff",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "XSIGHT phone-to-kiosk film handoff relay.",
+  "dependencies": {
+    "@vercel/blob": "^2.0.0"
+  }
+}

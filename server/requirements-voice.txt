@@ -1,0 +1,31 @@
+# Optional voice pipeline dependencies for /ws/voice (real-time speech).
+# Install AFTER `pip install -r requirements.txt`:
+#     pip install -r requirements-voice.txt
+#
+# These are heavy. Skip them if you only use Robot Mode's on-device
+# Google STT/TTS (Flutter speech_to_text + flutter_tts).
+
+# Speech-to-Text — faster-whisper (CTranslate2-backed Whisper).
+faster-whisper==1.0.3
+
+# Voice Activity Detection — webrtcvad (10/20/30ms PCM frames).
+# Use the maintained "wheels" fork; the original webrtcvad imports
+# `pkg_resources` which was removed from setuptools 81+.
+webrtcvad-wheels>=2.0.14
+
+# Text-to-Speech — Piper (default, fastest on CPU), Kokoro 82M, or Meta MMS-TTS.
+# Piper (~16x realtime on a laptop CPU, no GPU): pip install piper-tts, then
+# download a voice from https://huggingface.co/rhasspy/piper-voices (the .onnx
+# AND its .onnx.json together) into ml/tts/ — see PIPER_MODEL in .env.
+# Kokoro (English): Download model + voices from https://huggingface.co/hexgrad/Kokoro-82M
+# Meta MMS-TTS (1100+ languages including Tagalog facebook/mms-tts-tag and English facebook/mms-tts-eng):
+piper-tts>=1.3.0
+kokoro-onnx>=0.3.6
+onnxruntime>=1.20.1
+soundfile>=0.12.1
+transformers>=4.38.0
+torch>=2.0.0
+scipy>=1.10.0
+
+# CPU/GPU helpers — optional but speeds up STT.
+numpy>=1.26

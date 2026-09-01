@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=XSIGHT Launcher
+Comment=2-in-1 Launcher for XSIGHT Kiosk & AI Server
+Exec=/home/jay/Documents/project/tupi/xsight/launch.sh gui
+Icon=/home/jay/Documents/project/tupi/xsight/assets/images/logo.png
+Path=/home/jay/Documents/project/tupi/xsight
+Terminal=false
+Categories=MedicalSoftware;Development;
