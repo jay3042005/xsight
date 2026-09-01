@@ -24,8 +24,11 @@ import '../components/xs_radial_menu.dart';
 import 'kiosk_checkin_screen.dart';
 import 'kiosk_modules.dart';
 import '../components/xs_staff_dialogs.dart';
+import '../components/xs_update_dialogs.dart';
 import '../../core/api/emr_client.dart';
 import '../../core/api/kiosk_hub_client.dart';
+import '../../core/api/updates_client.dart';
+import '../../core/updates/update_check_service.dart';
 import '../../core/theme/xs_scale.dart';
 import '../../state/kiosk_patient_state.dart';
 
@@ -92,6 +95,7 @@ class _KioskShellState extends State<KioskShell> {
   /// reading, and re-sending the same state each time would flood the socket.
   bool _hubAnnouncedOpen = true; // sentinel: first call always sends
   final Esp32SerialClient _esp32 = Esp32SerialClient.shared;
+  UpdateCheckService? _updateCheck;
   final FocusNode _focusNode = FocusNode();
 
   /// The dashboard's primary target (guest START disc / staff CTA card). The
@@ -248,6 +252,25 @@ class _KioskShellState extends State<KioskShell> {
     // "Screening in progress" on the web portal with nobody at the screen.
     _announceSessionToHub();
     _esp32.connect();
+    // One update check per run: when the hub first reports its firmware
+    // version, compare against the server and offer to flash. The service
+    // owns the "only once" rule; the shell just shows what it fires.
+    _updateCheck = UpdateCheckService(esp32: _esp32, updates: UpdatesClient());
+    _updateCheck!.start();
+    _updateCheck!.attention.listen((a) {
+      if (!mounted) return;
+      if (a.serverUpdate) {
+        XSUpdateDialogs.showServer(context);
+      } else {
+        XSUpdateDialogs.showFirmware(
+          context,
+          current: a.current ?? '?',
+          expected: a.expected ?? '?',
+          esp32: _esp32,
+          updates: UpdatesClient(),
+        );
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _focusNode.requestFocus();
@@ -286,6 +309,7 @@ class _KioskShellState extends State<KioskShell> {
   void dispose() {
     _pressedResetTimer?.cancel();
     _idleTimer?.cancel();
+    _updateCheck?.dispose();
     _esp32.removeListener(_onStatus);
     KioskPatientSession.I.removeListener(_onSessionModeChanged);
     // Release the rented callback but leave the socket up — see the note in

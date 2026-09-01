@@ -159,6 +159,31 @@
 #include <MAX30105.h>
 #include "spo2_algorithm.h"   // from SparkFun MAX3010x library (batch HR+SpO2 algorithm)
 #include <Adafruit_MLX90614.h>
+#include <Update.h>
+
+// ---------------------------------------------------------------------------
+// FIRMWARE VERSION + OVER-SERIAL OTA
+// ---------------------------------------------------------------------------
+// Bump FW_VERSION whenever the sketch changes in a way the kiosk should
+// push to already-deployed hubs. The kiosk asks "FW?" once at startup,
+// compares against the server's expectation, and offers to flash a newer
+// .bin over this same serial link (see the OTA_* commands below) — so a
+// firmware update needs no USB cable swap, no bootloader button, no IDE.
+#define FW_VERSION "2026.09.1"
+
+// One OTA chunk is 256 bytes as hex (512 chars + framing) — small enough for
+// the line reader's String growth and the BT SPP path, big enough that a
+// 1.2 MB sketch finishes in a couple of minutes at 115200 baud.
+#define OTA_CHUNK_BYTES 256
+
+bool     otaActive = false;
+uint32_t otaNextSeq = 0;
+uint8_t  otaChunk[OTA_CHUNK_BYTES];
+
+// fwCrc32 / fwHexVal / fwDecodeHex live further down, next to handleCommand:
+// defining them here would hoist the Arduino auto-prototypes above the enum
+// and struct definitions this file opens with, which breaks the build.
+
 
 // ---------------------------------------------------------------------------
 // BLUETOOTH DUAL TRANSPORT  (USB Serial + Classic SPP)
@@ -977,10 +1002,47 @@ bool readBodyTemp(float &out) {
   return true;
 }
 
+// Table-free CRC32 (reflected, poly 0xEDB88320) — matches zlib/python
+// binascii.crc32, so the kiosk can verify chunks with any standard impl.
+uint32_t fwCrc32(const uint8_t *data, size_t len) {
+  uint32_t crc = 0xFFFFFFFF;
+  for (size_t i = 0; i < len; i++) {
+    crc ^= data[i];
+    for (uint8_t k = 0; k < 8; k++)
+      crc = (crc >> 1) ^ (0xEDB88320 & (-(int32_t)(crc & 1)));
+  }
+  return ~crc;
+}
+
+int fwHexVal(char c) {
+  if (c >= '0' && c <= '9') return c - '0';
+  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+  return -1;
+}
+
+// Decodes hex into otaChunk; returns byte count or -1 on a bad digit.
+int fwDecodeHex(const String &hex) {
+  if (hex.length() & 1) return -1;
+  size_t n = hex.length() / 2;
+  if (n > OTA_CHUNK_BYTES) return -1;
+  for (size_t i = 0; i < n; i++) {
+    int hi = fwHexVal(hex[(unsigned)i * 2]);
+    int lo = fwHexVal(hex[(unsigned)i * 2 + 1]);
+    if (hi < 0 || lo < 0) return -1;
+    otaChunk[i] = (uint8_t)((hi << 4) | lo);
+  }
+  return (int)n;
+}
+
 void handleCommand(const String &line) {
   // ─── Link / status ──────────────────────────────────────────────
   if (line == "PING") {
     xsPrintln("PONG");
+
+  } else if (line == "FW?") {
+    xsPrint("FW_VER:");
+    xsPrintln(FW_VERSION);
 
   } else if (line == "STATUS") {
     xsPrint("STATUS:");
@@ -1059,6 +1121,69 @@ void handleCommand(const String &line) {
     tempDone = false;
     tempScanStartMs = 0;
     digitalWrite(PIN_TEMPLED, LOW);
+
+  // ─── Over-serial firmware update ────────────────────────────────
+  // The kiosk streams the .bin the server serves, in CRC-checked hex
+  // chunks with per-chunk acknowledgement, then reboots the hub into the
+  // new firmware. Runs over USB *or* the BT SPP link — whichever stream
+  // delivered the OTA_BEGIN is the one answers go back on, same as every
+  // other command (the xsPrint mirror handles that).
+  } else if (line.startsWith("OTA_BEGIN:")) {
+    if (otaActive) { xsPrintln("OTA_ERR:BUSY"); return; }
+    size_t size = strtoul(line.c_str() + 10, nullptr, 10);
+    if (size == 0) { xsPrintln("OTA_ERR:SIZE"); return; }
+    if (!Update.begin(size)) {
+      xsPrint("OTA_ERR:BEGIN:");
+      xsPrintln(Update.errorString());
+      return;
+    }
+    otaActive = true;
+    otaNextSeq = 0;
+    xsPrint("OTA_READY:");          // tells the kiosk the max chunk size
+    xsPrintln(OTA_CHUNK_BYTES);
+
+  } else if (line.startsWith("OTA:")) {
+    // OTA:<seq>:<crc32-hex>:<hex-data>
+    if (!otaActive) { xsPrintln("OTA_ERR:NOT_STARTED"); return; }
+    int c1 = line.indexOf(':', 4);
+    int c2 = line.indexOf(':', c1 + 1);
+    if (c1 < 0 || c2 < 0) { xsPrintln("OTA_ERR:FRAME"); return; }
+    uint32_t seq = strtoul(line.substring(4, c1).c_str(), nullptr, 10);
+    uint32_t crc = strtoul(line.substring(c1 + 1, c2).c_str(), nullptr, 16);
+    int n = fwDecodeHex(line.substring(c2 + 1));
+    if (n < 0) { xsPrintln("OTA_ERR:HEX"); return; }
+    if (seq != otaNextSeq) { xsPrint("OTA_NAK:"); xsPrintln((unsigned long)seq); return; }
+    if (fwCrc32(otaChunk, n) != crc) { xsPrint("OTA_NAK:"); xsPrintln((unsigned long)seq); return; }
+    if (Update.write(otaChunk, n) != (size_t)n) {
+      otaActive = false;
+      Update.end(false);
+      xsPrint("OTA_ERR:WRITE:");
+      xsPrintln(Update.errorString());
+      return;
+    }
+    otaNextSeq++;
+    xsPrint("OTA_ACK:");            // only after the chunk is on flash
+    xsPrintln((unsigned long)seq);
+
+  } else if (line == "OTA_END") {
+    if (!otaActive) { xsPrintln("OTA_ERR:NOT_STARTED"); return; }
+    if (!Update.end(true)) {
+      otaActive = false;
+      xsPrint("OTA_ERR:END:");
+      xsPrintln(Update.errorString());
+      return;
+    }
+    xsPrintln("OTA_OK");
+    otaActive = false;
+    delay(250);                      // let the ack leave the UART
+    ESP.restart();
+
+  } else if (line == "OTA_ABORT") {
+    if (otaActive) {
+      Update.end(false);
+      otaActive = false;
+    }
+    xsPrintln("OTA_ABORTED");
 
   // ─── Session / identity ─────────────────────────────────────────
   } else if (line == "NEW_SESSION") {

@@ -120,11 +120,21 @@ class Updater {
       for (final f in archive.files) {
         if (!f.isFile) continue;
         final rel = f.name.substring(prefix.length + 1);
-        // Only the backend is hot-updatable: the Flutter kiosk and firmware
-        // are installed apps, not mergeable source, and the launcher cannot
-        // replace a kiosk APK it is not part of.
-        if (!rel.startsWith('server/')) continue;
-        final target = File('$serverDir${Platform.pathSeparator}${rel.substring('server/'.length)}');
+        // Hot-updatable trees only: the backend (code, into the server dir)
+        // and the hub firmware (sketch + compiled .bin, into the sibling
+        // `firmware/` dir the server serves it from). The Flutter kiosk and
+        // everything else are installed apps, not mergeable source.
+        final String targetRel;
+        if (rel.startsWith('server/')) {
+          targetRel = rel.substring('server/'.length);
+        } else if (rel.startsWith('firmware/') &&
+            // The Arduino build dir never ships.
+            !rel.startsWith('firmware/XSIGHT/build/')) {
+          targetRel = '..' + Platform.pathSeparator + rel;
+        } else {
+          continue;
+        }
+        final target = File(_join(serverDir, targetRel));
         await target.parent.create(recursive: true);
         await target.writeAsBytes(f.content as List<int>);
         copied++;

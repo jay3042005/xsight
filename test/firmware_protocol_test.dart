@@ -491,4 +491,61 @@ void main() {
       expect(XSModules.forNav('LABS'), isNull);
     });
   });
+
+  /// The firmware-update contract. The kiosk judges "hub is outdated" by
+/// asking `FW?` and comparing the answer with the server's expectation —
+/// which the server parses out of the sketch's FW_VERSION define. If any of
+/// the three sides (sketch define, kiosk parser, server regex) drift, the
+/// check silently never fires, so all of them are pinned here.
+group('firmware update protocol', () {
+  final sketch = File('firmware/XSIGHT/XSIGHT.ino').readAsStringSync();
+
+  test('the sketch declares a version the kiosk can compare', () {
+    final m = RegExp(r'#define\s+FW_VERSION\s+"([^"]+)"').firstMatch(sketch);
+    expect(m, isNotNull, reason: 'no FW_VERSION define in the sketch');
+    expect(m!.group(1), isNotEmpty);
+  });
+
+  test('the sketch answers FW? with FW_VER:<that version>', () {
+    expect(sketch, contains('"FW?"'));
+    expect(sketch, contains('xsPrint("FW_VER:")'));
+  });
+
+  test('the OTA handler frames exist and are the ones the kiosk drives', () {
+    for (final frame in [
+      'OTA_BEGIN:', 'OTA_READY:', 'OTA_ACK:', 'OTA_NAK:',
+      'OTA_ERR:', 'OTA_OK', 'OTA_ABORT',
+    ]) {
+      expect(sketch, contains(frame),
+          reason: 'sketch lost the $frame handler — the kiosk OTA push would stall');
+    }
+    expect(sketch, contains('#include <Update.h>'),
+        reason: 'OTA frames without Update.h would compile but flash nothing');
+  });
+
+  test('the client parses FW_VER into firmwareVersion', () {
+    final esp32 = Esp32SerialClient();
+    var seen = '';
+    esp32.onFirmwareVersion = (v) => seen = v;
+    esp32.debugHandleLine('FW_VER:2026.09.1');
+    expect(esp32.firmwareVersion, '2026.09.1');
+    expect(seen, '2026.09.1');
+  });
+
+  test('the client routes OTA frames to their callbacks', () {
+    final esp32 = Esp32SerialClient();
+    final frames = <String>[];
+    esp32.onOtaReady = (c) => frames.add('ready $c');
+    esp32.onOtaAck = (s) => frames.add('ack $s');
+    esp32.onOtaNak = (s) => frames.add('nak $s');
+    esp32.onOtaError = (r) => frames.add('err $r');
+    esp32.onOtaOk = () => frames.add('ok');
+    esp32.debugHandleLine('OTA_READY:256');
+    esp32.debugHandleLine('OTA_ACK:3');
+    esp32.debugHandleLine('OTA_NAK:4');
+    esp32.debugHandleLine('OTA_ERR:WRITE:oom');
+    esp32.debugHandleLine('OTA_OK');
+    expect(frames, ['ready 256', 'ack 3', 'nak 4', 'err WRITE:oom', 'ok']);
+  });
+});
 }

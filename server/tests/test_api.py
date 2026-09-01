@@ -384,3 +384,38 @@ def test_version_reports_stamped_sha() -> None:
             stamp.write_text(backup)
         elif stamp.exists():
             stamp.unlink()
+
+
+def test_updates_reports_firmware_version() -> None:
+    """Firmware expectation comes from the sketch — must match its define."""
+    import re, pathlib
+    sketch = pathlib.Path(main_app.__file__).resolve().parents[2] / "firmware" / "XSIGHT" / "XSIGHT.ino"
+    assert sketch.exists(), "sketch missing from repo layout"
+    m = re.search(r'#define\s+FW_VERSION\s+"([^"]+)"', sketch.read_text())
+    assert m, "sketch has no FW_VERSION define"
+
+    response = client.get("/updates")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["firmware"]["expected_version"] == m.group(1)
+    assert body["firmware"]["bin_available"] is True
+    assert body["firmware"]["bin_bytes"] > 0
+
+
+def test_updates_server_block_shapes() -> None:
+    """update_available is tri-state: True/False/None (unknown)."""
+    body = client.get("/updates").json()
+    s = body["server"]
+    assert set(s) == {"current_sha", "latest_sha", "update_available"}
+    if s["latest_sha"] is None or s["current_sha"] is None:
+        assert s["update_available"] is None
+    else:
+        assert s["update_available"] == (s["latest_sha"] != s["current_sha"])
+
+
+def test_firmware_bin_served() -> None:
+    response = client.get("/firmware/bin")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/octet-stream")
+    # ESP32 firmware starts with the ESP image magic byte 0xE9.
+    assert response.content[0] == 0xE9

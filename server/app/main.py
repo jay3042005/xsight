@@ -1003,6 +1003,114 @@ async def version() -> dict[str, Any]:
     return {"sha": sha}
 
 
+# ---------------------------------------------------------------------------
+# Update awareness (single source of truth for the kiosk)
+# ---------------------------------------------------------------------------
+# The kiosk never talks to GitHub itself — it asks this endpoint. The server
+# knows its own stamped SHA, the repo tip (checked against GitHub, cached so
+# a kiosk-heavy clinic does not burn the API rate limit), and the firmware
+# the hub *should* be running (parsed from the sketch, same as the Flutter
+# protocol test — the sketch is the source of truth, not a sidecar file).
+UPDATES_GITHUB_REPO = os.getenv("UPDATES_GITHUB_REPO", "jay3042005/xsight")
+UPDATES_GITHUB_BRANCH = os.getenv("UPDATES_GITHUB_BRANCH", "main")
+_UPDATES_CACHE_S = 300.0
+_updates_cache: dict[str, Any] = {"ts": 0.0, "latest_sha": None}
+
+_FIRMWARE_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "firmware", "XSIGHT"
+)
+
+
+def _firmware_expected_version() -> str | None:
+    """FW_VERSION from the sketch, or None when the sketch is absent."""
+    try:
+        with open(os.path.join(_FIRMWARE_DIR, "XSIGHT.ino"), "r", encoding="utf-8", errors="replace") as fh:
+            m = re.search(r'#define\s+FW_VERSION\s+"([^"]+)"', fh.read())
+        return m.group(1) if m else None
+    except OSError:
+        return None
+
+
+def _firmware_bin_path() -> str | None:
+    p = os.path.join(_FIRMWARE_DIR, "XSIGHT.ino.bin")
+    return p if os.path.isfile(p) else None
+
+
+async def _github_latest_sha() -> str | None:
+    """Latest commit SHA of the update repo, cached for [_UPDATES_CACHE_S].
+
+    None on any failure (offline, rate limited, 5xx): "unknown", which the
+    kiosk treats as "don't prompt", never as "out of date".
+    """
+    now = time.time()
+    if now - float(_updates_cache["ts"]) < _UPDATES_CACHE_S:
+        return _updates_cache["latest_sha"]
+    sha: str | None = None
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            r = await client.get(
+                f"https://api.github.com/repos/{UPDATES_GITHUB_REPO}/commits/{UPDATES_GITHUB_BRANCH}",
+                headers={"User-Agent": "xsight-server", "Accept": "application/vnd.github+json"},
+            )
+            if r.status_code == 200:
+                sha = r.json().get("sha")
+    except Exception:  # noqa: BLE001 - offline is a normal kiosk-lan state
+        sha = None
+    _updates_cache.update(ts=now, latest_sha=sha)
+    return sha
+
+
+@app.get("/updates")
+async def updates() -> dict[str, Any]:
+    """What the kiosk should know about updates — server and hub firmware.
+
+    Server: own SHA (stamped by the launcher) vs the repo tip. Firmware:
+    the version the sketch declares and whether a flashable .bin is on
+    disk. The kiosk compares the firmware version against what the hub
+    reports over serial (`FW?`), so "outdated hub" is judged hub-side.
+    """
+    stamp = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".update_sha")
+    current_sha: str | None = None
+    try:
+        with open(stamp, "r", encoding="utf-8") as fh:
+            current_sha = fh.read().strip() or None
+    except OSError:
+        pass
+    latest_sha = await _github_latest_sha()
+
+    fw_version = _firmware_expected_version()
+    fw_bin = _firmware_bin_path()
+    return {
+        "server": {
+            "current_sha": current_sha,
+            "latest_sha": latest_sha,
+            # Null (not False) when the latest is unknown: unknown is not
+            # "up to date" and it is not "out of date" either.
+            "update_available": (latest_sha != current_sha) if latest_sha and current_sha else None,
+        },
+        "firmware": {
+            "expected_version": fw_version,
+            "bin_available": fw_bin is not None,
+            "bin_bytes": os.path.getsize(fw_bin) if fw_bin else 0,
+        },
+    }
+
+
+@app.get("/firmware/bin")
+async def firmware_bin() -> Response:
+    """The flashable hub firmware, for the kiosk's serial OTA push."""
+    p = _firmware_bin_path()
+    if not p:
+        raise HTTPException(status_code=404, detail="No firmware binary on this server")
+    with open(p, "rb") as fh:
+        payload = fh.read()
+    return Response(
+        content=payload,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": 'attachment; filename="XSIGHT.ino.bin"'},
+    )
+
+
 def _lung_status() -> dict[str, Any]:
     """Lung classifier status, without forcing a torch import at startup."""
     try:

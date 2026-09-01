@@ -185,6 +185,24 @@ class Esp32SerialClient extends ChangeNotifier {
   Esp32ModeQueryCallback? onModeQuery;
   Esp32ModeAckCallback? onModeAck;
   Esp32SensorErrorCallback? onSensorError;
+
+  // ─── Firmware version + over-serial OTA ────────────────────────────
+  // FW_VER and the OTA_* frames are parsed here but *driven* from
+  // FirmwareOta — the client stays a dumb transport, same as every other
+  // frame. `FW?` is sent once per ready-transition so the shell's one-time
+  // update check has a hub-side version to compare.
+  String? _firmwareVersion;
+
+  /// Firmware version the hub reported, or null when it hasn't answered.
+  String? get firmwareVersion => _firmwareVersion;
+  void Function(String version)? onFirmwareVersion;
+  void Function(int maxChunk)? onOtaReady;
+  void Function(int seq)? onOtaAck;
+  void Function(int seq)? onOtaNak;
+  void Function(String reason)? onOtaError;
+  VoidCallback? onOtaOk;
+  VoidCallback? onOtaAborted;
+
   Future<bool>? _connectInFlight;
   Timer? _handshakeTimer;
   Timer? _reconnectTimer;
@@ -1043,8 +1061,43 @@ class Esp32SerialClient extends ChangeNotifier {
       // forgotten which mode it is in.
       if (!wasReady || line == 'READY:1') {
         onModeQuery?.call();
+        // One version probe per (re)connect — the update check rides on it.
+        sendCommand('FW?');
         notifyListeners();
       }
+      return;
+    }
+    if (line.startsWith('FW_VER:')) {
+      _firmwareVersion = line.substring(7).trim();
+      debugPrint('[esp32] firmware $_firmwareVersion');
+      onFirmwareVersion?.call(_firmwareVersion!);
+      return;
+    }
+    if (line.startsWith('OTA_READY:')) {
+      final maxChunk = int.tryParse(line.substring(10));
+      if (maxChunk != null) onOtaReady?.call(maxChunk);
+      return;
+    }
+    if (line.startsWith('OTA_ACK:')) {
+      final seq = int.tryParse(line.substring(8));
+      if (seq != null) onOtaAck?.call(seq);
+      return;
+    }
+    if (line.startsWith('OTA_NAK:')) {
+      final seq = int.tryParse(line.substring(8));
+      if (seq != null) onOtaNak?.call(seq);
+      return;
+    }
+    if (line.startsWith('OTA_ERR:')) {
+      onOtaError?.call(line.substring(8));
+      return;
+    }
+    if (line == 'OTA_OK') {
+      onOtaOk?.call();
+      return;
+    }
+    if (line == 'OTA_ABORTED') {
+      onOtaAborted?.call();
       return;
     }
     if (line.startsWith('ERR:')) {
