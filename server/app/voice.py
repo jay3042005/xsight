@@ -105,7 +105,11 @@ MMS_MODEL_ID = os.getenv("MMS_MODEL_ID", "facebook/mms-tts-eng")
 # Piper TTS (rhasspy/piper) — the fastest CPU neural option: ~16x realtime
 # on a laptop with no GPU, first audio chunk in ~0.1-0.3s. Voices from
 # https://huggingface.co/rhasspy/piper-voices (onnx + onnx.json together).
-PIPER_MODEL = os.getenv("PIPER_MODEL", "ml/tts/en_US-lessac-medium.onnx")
+# ryan = male voice. Swapped from lessac (female) on request — same medium
+# quality class and 22050 Hz, so the resample path and realtime factor are
+# unchanged. Other male options already in the piper-voices repo: john,
+# joe, mike, norman, sam, hfc_male.
+PIPER_MODEL = os.getenv("PIPER_MODEL", "ml/tts/en_US-ryan-medium.onnx")
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY", "")
 DEEPGRAM_TTS_MODEL = os.getenv("DEEPGRAM_TTS_MODEL", "aura-2-thalia-en")
 VOICE_TTS_SR = int(os.getenv("VOICE_TTS_SR", "24000"))
