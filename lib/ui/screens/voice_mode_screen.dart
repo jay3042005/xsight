@@ -74,7 +74,11 @@ class VoiceModeScreenState extends State<VoiceModeScreen>
   double _level = 0;
 
   /// Rolling amplitude history driving the 32-bar visualizer.
-  final List<double> _levelHistory = List<double>.filled(48, 0);
+  /// Rolling visualizer window. Growable: `List.filled(48, 0)` without the
+  /// flag is *fixed-length*, and the ticker's `removeAt` used to throw
+  /// "Cannot remove from a fixed-length list" on every frame — which took
+  /// the whole voice screen down with it.
+  final List<double> _levelHistory = List<double>.filled(48, 0, growable: true);
   late final Ticker _levelTicker;
 
   /// True between pointer/key down and up on the talk control.

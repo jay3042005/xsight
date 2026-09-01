@@ -24,11 +24,16 @@ import 'package:xsight_app/ui/screens/kiosk_patient_picker_screen.dart';
 import 'package:xsight_app/ui/screens/kiosk_temp_screen.dart';
 import 'package:xsight_app/ui/components/xs_button.dart';
 import 'package:xsight_app/ui/screens/kiosk_vitals_screen.dart';
+import 'package:xsight_app/ui/screens/voice_mode_screen.dart';
+
+void _noop() {}
 
 Widget _host(Widget child) => MaterialApp(
   theme: XSTheme.light(),
   home: Scaffold(body: child),
 );
+
+Widget _noGuide(double size) => SizedBox(width: size, height: size);
 
 void main() {
   group('XSModuleAccent', () {
@@ -2074,7 +2079,25 @@ group('guided scan panel on a landscape phone', () {
     );
     expect(find.widgetWithText(XSButton, 'CANCEL'), findsNothing);
   });
-});
-}
 
-Widget _noGuide(double size) => SizedBox(width: size, height: size);
+  // Regression: the voice screen's visualizer ticker mutated a fixed-length
+  // list every frame — "Unsupported operation: Cannot remove from a
+  // fixed-length list" — which only shows up once the ticker actually runs
+  // (a single pump() in the layout tests never ticks it). Pump with elapsed
+  // time so the ticker fires, and expect a clean build.
+  testWidgets('voice mode visualizer ticker does not throw', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: XSTheme.light(),
+        home: const VoiceModeScreen(onExit: _noop),
+      ),
+    );
+    // Let several level ticks run at ~16ms each.
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(tester.takeException(), isNull);
+  });
+});
+
+}
